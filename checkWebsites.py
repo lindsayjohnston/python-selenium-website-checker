@@ -3,55 +3,93 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
+import ezgmail
 
 driver = webdriver.Chrome()
 
-statuses = []
+statuses = {}
 
 # lindsaykjohnston.com
 url = "https://www.lindsaykjohnston.com/"
-driver.get(url)
-
 try:
-   wait = WebDriverWait(driver, timeout=3)
-   wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".shmop-title")))
-except TimeoutException as ex:
-   print("TimeoutException has been thrown for lindsaykjohnston.com." )
+   driver.get(url)
+   statuses[url] = "GOOD TO GO"
+except:
+   statuses[url] = "ERROR - Site didn't load."
 
-
-heading = driver.find_element(by = By.CLASS_NAME, value="top-title")
-
-if heading.text != "lindsay k. johnston":
-   statuses.append(url + " : " + "ERROR")
-else:
-   statuses.append(url + " : " + "GOOD-TO-GO")
+if "ERROR" not in statuses[url]: 
+   try:
+      wait = WebDriverWait(driver, timeout=3)
+      wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".top-title")))
+      statuses[url] = "GOOD-TO-GO"
+   except TimeoutException as ex:
+      statuses[url] = "ERROR - Title didn't load."
+   
 
 # micahclayluebben.us
 url = "https://www.micahclay.us/"
-driver.get(url)
-mainImgAltTag = driver.find_element(by = By.CLASS_NAME, value="headerGraphic").get_attribute("alt")
-if mainImgAltTag != "micah-clay-logo":
-   statuses.append(url + " : " + "ERROR")
-else:
-   statuses.append(url + " : " + "GOOD-TO-GO")
+try:
+   driver.get(url)
+   statuses[url] = "GOOD TO GO"
+except:
+   statuses[url] = "ERROR - Site didn't load."
 
-# # GitHub User Map
-# url = "https://api-map-upgraded-heroku-22.herokuapp.com/"
-# driver.get(url)
-# driver.find_element(by = By.ID, value="city-input").send_keys("Spokane")
-# driver.find_element(by= By.ID, value="get-map").click()
+if "ERROR" not in statuses[url]:
+   try:
+      wait = WebDriverWait(driver, timeout=3)
+      wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".headerGraphic")))
+      statuses[url] = "GOOD TO GO"
+   except TimeoutException as ex:
+      statuses[url] = "ERROR - .headerGraphic not found"
 
-# mapExplanation = driver.find_element(by = By.ID, value= "marker-explanation")
 
-# wait = WebDriverWait(driver, timeout=10)
-# wait.until(EC.visibility_of(mapExplanation))
+# GitHub User Map
+url = "https://api-map-upgraded-heroku-22.herokuapp.com/"
+try:
+   driver.get(url)
+   statuses[url] = "GOOD TO GO"
+except:
+   statuses[url] = "ERROR - Site didn't load."
 
-# if mapExplanation.text != "Click a marker to see the number of GitHub users.":
-#    statuses.append(url + " : " + "ERROR")
-# else:
-#    statuses.append(url + " : " + "GOOD-TO-GO")
+if "ERROR" not in statuses[url]:
+   try:
+      wait = WebDriverWait(driver, timeout=3)
+      wait.until(EC.presence_of_element_located((By.ID, "city-input")))
+      wait.until(EC.presence_of_element_located((By.ID, "get-map")))
+      wait.until(EC.presence_of_element_located((By.ID, "marker-explanation")))
+      statuses[url] = "GOOD TO GO"
+   except TimeoutException as ex:
+      statuses[url] = "ERROR - some elements weren't found."
+
+if "ERROR" not in statuses[url]:
+   driver.find_element(by = By.ID, value="city-input").send_keys("Spokane")
+   driver.find_element(by= By.ID, value="get-map").click()
+
+   try:
+      wait = WebDriverWait(driver, timeout=15)
+      mapExplanation = driver.find_element(by = By.ID, value= "marker-explanation")
+      wait.until(EC.visibility_of(mapExplanation))
+      statuses[url] = "GOOD TO GO"
+   except TimeoutException as ex:
+      statuses[url] = "ERROR - #marker-explanation not visiblesome elements weren't found."
+
+
+# Chipotle Clone
+url = "https://main.d25r1kk5mc9ae9.amplifyapp.com/"
+
+try:
+   driver.get(url)
+   statuses["Chipotle"] = "GOOD TO GO"
+except:
+   statuses["Chipotle"] = "ERROR - Site didn't load"
 
 print(statuses)
+
+statusesString = str(statuses)
+
+if "ERROR" in statusesString:
+   print("Sending email error alert")
+   ezgmail.send('lkjohnston10@gmail.com', 'Subject line', str(statuses))
 
 driver.quit()
 
